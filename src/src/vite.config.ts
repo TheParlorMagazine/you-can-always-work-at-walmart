@@ -1,0 +1,7 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/you-can-always-work-at-walmart/' // <= IMPORTANT for GitHub Pages
+})
