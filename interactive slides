@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -11,7 +11,6 @@ type Metric = {
   category: string
   source: string
   link: string
-  id?: string | number
 }
 
 const metrics: Metric[] = [
@@ -29,7 +28,7 @@ const metrics: Metric[] = [
     unit: 'percent',
     category: 'Labor trend (QSR)',
     source: "Statista — Number of employees at McDonald's Corporation worldwide from 2005 to 2023",
-    link: "https://www.statista.com/statistics/819966/mcdonald-s-number-of-employees/"
+    link: 'https://www.statista.com/statistics/819966/mcdonald-s-number-of-employees/'
   },
   {
     title: 'Tech industry layoffs since 2022',
@@ -83,114 +82,27 @@ const variants = {
   })
 }
 
-type Props = {
-  autoplay?: boolean
-  autoplayIntervalMs?: number
-  className?: string
-}
-
-export default function AutomationMetricsCarousel({
-  autoplay = true,
-  autoplayIntervalMs = 6000,
-  className = ''
-}: Props) {
+export default function AutomationMetricsCarousel() {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(0)
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const autoplayRef = useRef<number | null>(null)
-  const isHoveredRef = useRef(false)
-
-  const metricsLength = metrics.length
-  const current = metrics[index]
 
   const paginate = (dir: number) => {
     setDirection(dir)
-    setIndex((prev) => (prev + dir + metricsLength) % metricsLength)
+    setIndex((prev) => (prev + dir + metrics.length) % metrics.length)
   }
 
-  // Keyboard navigation (Left / Right)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        paginate(-1)
-      } else if (e.key === 'ArrowRight') {
-        paginate(1)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Autoplay with pause-on-hover
-  useEffect(() => {
-    if (!autoplay || metricsLength <= 1) return
-
-    const start = () => {
-      stop()
-      // window.setInterval returns number in browsers
-      autoplayRef.current = window.setInterval(() => {
-        if (!isHoveredRef.current) paginate(1)
-      }, autoplayIntervalMs) as unknown as number
-    }
-
-    const stop = () => {
-      if (autoplayRef.current !== null) {
-        clearInterval(autoplayRef.current)
-        autoplayRef.current = null
-      }
-    }
-
-    start()
-    return () => stop()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoplay, autoplayIntervalMs, metricsLength])
-
-  // Handlers to set hover state
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const onEnter = () => {
-      isHoveredRef.current = true
-    }
-    const onLeave = () => {
-      isHoveredRef.current = false
-    }
-    el.addEventListener('mouseenter', onEnter)
-    el.addEventListener('mouseleave', onLeave)
-    return () => {
-      el.removeEventListener('mouseenter', onEnter)
-      el.removeEventListener('mouseleave', onLeave)
-    }
-  }, [])
+  const current = metrics[index]
 
   return (
-    <div
-      ref={containerRef}
-      className={`flex flex-col items-center w-full max-w-xl mx-auto ${className}`}
-    >
+    <div className="flex flex-col items-center w-full max-w-xl mx-auto">
       <div className="relative w-full">
         <Card className="w-full p-6 bg-white shadow-md overflow-hidden">
           <div className="flex items-center justify-between mb-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => paginate(-1)}
-              aria-label="Previous metric"
-            >
+            <Button variant="outline" size="icon" onClick={() => paginate(-1)} aria-label="Previous">
               <ChevronLeft className="h-5 w-5" />
             </Button>
-
-            <p className="text-sm text-gray-500" aria-hidden>
-              {index + 1} / {metricsLength}
-            </p>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => paginate(1)}
-              aria-label="Next metric"
-            >
+            <p className="text-sm text-gray-500">{index + 1} / {metrics.length}</p>
+            <Button variant="outline" size="icon" onClick={() => paginate(1)} aria-label="Next">
               <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
@@ -198,7 +110,7 @@ export default function AutomationMetricsCarousel({
           <div className="relative min-h-[220px]">
             <AnimatePresence custom={direction} mode="popLayout" initial={false}>
               <motion.div
-                key={`${current.id ?? index}-${index}`}
+                key={index}
                 custom={direction}
                 variants={variants}
                 initial="enter"
@@ -206,7 +118,6 @@ export default function AutomationMetricsCarousel({
                 exit="exit"
                 transition={{ duration: 0.28, ease: 'easeInOut' }}
                 className="text-center"
-                aria-hidden={false}
               >
                 <h2 className="text-lg font-semibold mb-3">{current.title}</h2>
                 <CardContent className="space-y-3">
@@ -218,7 +129,6 @@ export default function AutomationMetricsCarousel({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center text-blue-600 hover:underline"
-                    aria-label={`Open source for: ${current.title}`}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" /> View Source
                   </a>
@@ -230,13 +140,8 @@ export default function AutomationMetricsCarousel({
         </Card>
       </div>
 
-      {/* This region announces the currently visible metric for assistive tech */}
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {current.title}, {current.value} ({current.unit})
-      </div>
-
       <div className="mt-2 text-xs text-gray-500">
-        Tip: Use the arrow buttons or keyboard ← → to slide through metrics.
+        Tip: Use the arrow buttons to slide through metrics.
       </div>
     </div>
   )
